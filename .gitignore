@@ -1,6 +1,10 @@
 # macOS
 .DS_Store
 
+# Cloudflare / Wrangler
+.wrangler
+.dev.vars
+
 # Logs
 logs
 *.log

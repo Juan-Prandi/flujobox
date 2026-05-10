@@ -1,0 +1,13 @@
+name = "flujobox-web"
+main = "src/index.js"
+compatibility_date = "2025-05-01"
+
+routes = [
+  { pattern = "flujobox.com", custom_domain = true },
+  { pattern = "www.flujobox.com", custom_domain = true },
+]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
