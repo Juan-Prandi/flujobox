@@ -5,9 +5,10 @@ orchestration lives at the root (`Makefile`, `CLAUDE.md`).
 
 ## Projects
 
-| Path  | Description                                | Live URL              |
-| ----- | ------------------------------------------ | --------------------- |
-| `web/` | Public site, served by a Cloudflare Worker | https://flujobox.com  |
+| Path       | Description                                            | Live URL              |
+| ---------- | ------------------------------------------------------ | --------------------- |
+| `web/`     | Public site, served by a Cloudflare Worker             | https://flujobox.com  |
+| `servers/` | Docs for long-lived hosts (e.g. `flujobox-dev` / n8n)  | —                     |
 
 ## Quick start
 
@@ -25,6 +26,9 @@ flujobox/
 ├── Makefile          # entry points for common tasks across projects
 ├── CLAUDE.md         # contributor / agent guidelines
 ├── README.md         # this file
+├── servers/          # ops docs for long-lived hosts (no code)
+│   ├── README.md
+│   └── flujobox-dev.md
 └── web/              # static site served by a Cloudflare Worker
     ├── package.json
     ├── wrangler.toml # name = flujobox-web, assets dir = ./public

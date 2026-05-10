@@ -11,6 +11,9 @@ flujobox/
 ├── Makefile          # entry points for common tasks across projects
 ├── CLAUDE.md         # this file
 ├── README.md
+├── servers/          # docs for long-lived hosts (no code)
+│   ├── README.md
+│   └── flujobox-dev.md
 └── web/              # public site, served by a Cloudflare Worker
     ├── package.json
     ├── wrangler.toml # name = flujobox-web, assets dir = ./public
@@ -67,6 +70,18 @@ make web-deploy
 
 First-time setup requires `npx wrangler login` (interactive, run from `web/`)
 and a registered `workers.dev` subdomain on the Cloudflare account.
+
+### servers
+
+Docs-only directory describing the long-lived hosts the project depends on.
+One file per host. No deploy logic — if/when we add IaC, it goes in its own
+top-level project.
+
+- **`flujobox-dev`** — Ubuntu 24.04 droplet (1 vCPU / 1 GB RAM). Hosts n8n
+  for the MVP at https://dev.flujobox.com (n8n in Docker, Caddy on the host
+  doing TLS via a Cloudflare Origin Certificate). SSH alias `flujobox-dev`
+  (also `flujo-dev`) is configured in `~/.ssh/config`. See
+  `servers/flujobox-dev.md` for full notes.
 
 ## Working in this repo (for agents)
 

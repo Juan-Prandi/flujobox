@@ -1,4 +1,4 @@
-.PHONY: help install web-dev web-deploy web-install
+.PHONY: help install web-dev web-deploy web-install dev-ssh
 
 help:
 	@echo "Targets:"
@@ -6,6 +6,7 @@ help:
 	@echo "  web-install   Install deps for web/"
 	@echo "  web-dev       Run web/ Worker locally (wrangler dev)"
 	@echo "  web-deploy    Deploy web/ Worker to Cloudflare"
+	@echo "  dev-ssh       SSH into the flujobox-dev server"
 
 install: web-install
 
@@ -17,3 +18,6 @@ web-dev:
 
 web-deploy:
 	cd web && npm run deploy
+
+dev-ssh:
+	ssh flujobox-dev
