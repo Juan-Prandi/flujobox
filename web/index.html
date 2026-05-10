@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FLUJO — Automatización empresarial con n8n + IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,700;9..144,900&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F2EDE2;
+    --paper-deep: #E8E1D2;
+    --ink: #0F0E0B;
+    --ink-soft: #2A2823;
+    --muted: #807A6E;
+    --terracotta: #C84A1F;
+    --terracotta-deep: #9C3815;
+    --olive: #4A4D2E;
+    --rule: #C9C0AD;
+
+    --display: 'Fraunces', serif;
+    --sans: 'Instrument Sans', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.5;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(200,74,31,0.04), transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(74,77,46,0.05), transparent 40%);
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.35;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+  }
+
+  .container { max-width: 1320px; margin: 0 auto; padding: 0 32px; }
+
+  /* ===== NAV ===== */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 50;
+    padding: 22px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(242, 237, 226, 0.7);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s ease;
+  }
+  nav.scrolled { border-bottom-color: var(--rule); }
+
+  .logo {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-dot {
+    width: 10px; height: 10px;
+    background: var(--terracotta);
+    border-radius: 50%;
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.6; }
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 36px;
+    list-style: none;
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .nav-links a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    transition: color 0.2s;
+    position: relative;
+  }
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -4px; left: 0;
+    width: 0; height: 1px;
+    background: var(--terracotta);
+    transition: width 0.3s;
+  }
+  .nav-links a:hover { color: var(--terracotta); }
+  .nav-links a:hover::after { width: 100%; }
+
+  .nav-cta {
+    padding: 10px 18px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+  .nav-cta:hover { background: var(--terracotta); }
+
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+  }
+
+  /* ===== HERO ===== */
+  .hero {
+    min-height: 100vh;
+    padding: 140px 0 80px;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 60px;
+    align-items: center;
+  }
+  @media (max-width: 960px) {
+    .hero-grid { grid-template-columns: 1fr; }
+  }
+
+  .hero-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .hero-meta::before {
+    content: '';
+    width: 36px; height: 1px;
+    background: var(--terracotta);
+  }
+
+  .hero h1 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(48px, 7vw, 96px);
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    margin-bottom: 32px;
+    font-variation-settings: "opsz" 144;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--terracotta);
+    font-weight: 300;
+  }
+  .hero h1 .underline {
+    position: relative;
+    display: inline-block;
+  }
+  .hero h1 .underline::after {
+    content: '';
+    position: absolute;
+    bottom: 0.1em; left: 0;
+    width: 100%; height: 8px;
+    background: var(--terracotta);
+    opacity: 0.25;
+    z-index: -1;
+  }
+
+  .hero p.lead {
+    font-size: 19px;
+    line-height: 1.55;
+    max-width: 540px;
+    color: var(--ink-soft);
+    margin-bottom: 40px;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .btn-primary {
+    padding: 16px 28px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    font-family: var(--mono);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-primary:hover {
+    background: var(--terracotta);
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  .btn-primary svg { width: 14px; height: 14px; transition: transform 0.25s; }
+  .btn-primary:hover svg { transform: translateX(4px); }
+
+  .btn-ghost {
+    padding: 16px 4px;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    text-decoration: none;
+    border-bottom: 1px solid var(--ink);
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover { color: var(--terracotta); border-color: var(--terracotta); }
+
+  /* Node visualization */
+  .node-viz {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    max-width: 480px;
+    margin-left: auto;
+  }
+  .node-viz svg { width: 100%; height: 100%; }
+
+  /* ===== MARQUEE ===== */
+  .marquee {
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    overflow: hidden;
+    padding: 28px 0;
+    background: var(--paper-deep);
+  }
+  .marquee-track {
+    display: flex;
+    gap: 60px;
+    animation: scroll 35s linear infinite;
+    width: max-content;
+  }
+  .marquee-item {
+    font-family: var(--display);
+    font-style: italic;
+    font-weight: 300;
+    font-size: 28px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 60px;
+  }
+  .marquee-item::after {
+    content: '✦';
+    color: var(--terracotta);
+    font-style: normal;
+    font-size: 18px;
+  }
+  @keyframes scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* ===== SECTIONS ===== */
+  section {
+    padding: 120px 0;
+    position: relative;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--terracotta);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .section-label::before {
+    content: counter(section-counter, decimal-leading-zero);
+    counter-increment: section-counter;
+    color: var(--muted);
+  }
+  body { counter-reset: section-counter; }
+
+  .section-title {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(36px, 5vw, 64px);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    margin-bottom: 24px;
+    max-width: 880px;
+  }
+  .section-title em { font-style: italic; color: var(--terracotta); }
+
+  .section-intro {
+    font-size: 18px;
+    color: var(--ink-soft);
+    max-width: 620px;
+    margin-bottom: 64px;
+    line-height: 1.55;
+  }
+
+  /* ===== METHOD ===== */
+  .method-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+  @media (max-width: 860px) {
+    .method-grid { grid-template-columns: 1fr; }
+  }
+
+  .method-card {
+    background: var(--paper);
+    padding: 48px 36px;
+    position: relative;
+    transition: background 0.3s ease;
+  }
+  .method-card:hover { background: var(--paper-deep); }
+
+  .method-num {
+    font-family: var(--display);
+    font-style: italic;
+    font-weight: 300;
+    font-size: 64px;
+    color: var(--terracotta);
+    line-height: 1;
+    margin-bottom: 32px;
+  }
+  .method-card h3 {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+    line-height: 1.1;
+  }
+  .method-card p {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    margin-bottom: 24px;
+  }
+  .method-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .method-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+  }
+  .method-card:hover .method-tag { background: var(--paper); }
+
+  /* ===== USE CASES ===== */
+  .cases {
+    background: var(--ink);
+    color: var(--paper);
+    margin-top: 0;
+  }
+  .cases .section-title { color: var(--paper); }
+  .cases .section-intro { color: rgba(242, 237, 226, 0.7); }
+  .cases .section-label { color: #FFB89A; }
+
+  .cases-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+  @media (max-width: 760px) {
+    .cases-grid { grid-template-columns: 1fr; }
+  }
+
+  .case {
+    border: 1px solid rgba(242, 237, 226, 0.15);
+    padding: 32px;
+    transition: all 0.3s ease;
+    cursor: default;
+    position: relative;
+    overflow: hidden;
+  }
+  .case::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 2px;
+    background: var(--terracotta);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+  .case:hover {
+    border-color: rgba(242, 237, 226, 0.4);
+    background: rgba(242, 237, 226, 0.03);
+  }
+  .case:hover::before { transform: scaleX(1); }
+
+  .case-icon {
+    width: 40px; height: 40px;
+    margin-bottom: 24px;
+    color: var(--terracotta);
+  }
+  .case h4 {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 22px;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+  .case p {
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(242, 237, 226, 0.75);
+    margin-bottom: 20px;
+  }
+  .case-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(242, 237, 226, 0.5);
+    display: flex;
+    justify-content: space-between;
+    padding-top: 16px;
+    border-top: 1px solid rgba(242, 237, 226, 0.1);
+  }
+  .case-meta strong {
+    color: #FFB89A;
+    font-weight: 500;
+  }
+
+  /* ===== STATS ===== */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
+    padding: 80px 0;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  @media (max-width: 760px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .stat-num {
+    font-family: var(--display);
+    font-weight: 300;
+    font-size: clamp(48px, 6vw, 80px);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+  .stat-num em { font-style: italic; color: var(--terracotta); }
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  /* ===== MANIFESTO ===== */
+  .manifesto-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 80px;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .manifesto-grid { grid-template-columns: 1fr; gap: 40px; }
+  }
+
+  .manifesto-text {
+    font-family: var(--display);
+    font-weight: 300;
+    font-size: 28px;
+    line-height: 1.35;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+  }
+  .manifesto-text em { font-style: italic; color: var(--terracotta); }
+  .manifesto-text p + p { margin-top: 1em; }
+
+  .manifesto-list {
+    list-style: none;
+    counter-reset: m;
+  }
+  .manifesto-list li {
+    padding: 24px 0;
+    border-bottom: 1px solid var(--rule);
+    counter-increment: m;
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 20px;
+    align-items: baseline;
+  }
+  .manifesto-list li::before {
+    content: counter(m, decimal-leading-zero);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--terracotta);
+    letter-spacing: 0.1em;
+  }
+  .manifesto-list h5 {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 20px;
+    margin-bottom: 6px;
+  }
+  .manifesto-list p {
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+
+  /* ===== CTA ===== */
+  .cta {
+    background: var(--paper-deep);
+    padding: 140px 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta::before {
+    content: '✦';
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    color: var(--terracotta);
+  }
+  .cta-title {
+    font-family: var(--display);
+    font-weight: 300;
+    font-size: clamp(48px, 8vw, 120px);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    margin-bottom: 40px;
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .cta-title em { font-style: italic; color: var(--terracotta); }
+  .cta-sub {
+    font-size: 18px;
+    color: var(--ink-soft);
+    max-width: 540px;
+    margin: 0 auto 48px;
+    line-height: 1.55;
+  }
+
+  .cta-form {
+    display: flex;
+    max-width: 520px;
+    margin: 0 auto;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+  }
+  .cta-form input {
+    flex: 1;
+    padding: 18px 24px;
+    border: none;
+    background: transparent;
+    font-family: var(--sans);
+    font-size: 15px;
+    color: var(--ink);
+    outline: none;
+  }
+  .cta-form input::placeholder { color: var(--muted); }
+  .cta-form button {
+    padding: 18px 28px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .cta-form button:hover { background: var(--terracotta); }
+
+  /* ===== FOOTER ===== */
+  footer {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 80px 0 40px;
+  }
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 60px;
+    margin-bottom: 80px;
+  }
+  @media (max-width: 760px) {
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .footer-brand h3 {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 32px;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+  .footer-brand p {
+    color: rgba(242, 237, 226, 0.6);
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 320px;
+  }
+
+  .footer-col h6 {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 20px;
+    color: rgba(242, 237, 226, 0.5);
+  }
+  .footer-col ul { list-style: none; }
+  .footer-col li { margin-bottom: 10px; }
+  .footer-col a {
+    color: var(--paper);
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+  }
+  .footer-col a:hover { color: #FFB89A; }
+
+  .footer-bottom {
+    border-top: 1px solid rgba(242, 237, 226, 0.15);
+    padding-top: 32px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(242, 237, 226, 0.5);
+  }
+
+  /* ===== ANIMATIONS ===== */
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .reveal.in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Node viz animations */
+  @keyframes flow {
+    0% { stroke-dashoffset: 0; }
+    100% { stroke-dashoffset: -20; }
+  }
+  @keyframes nodeBounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+  @keyframes shimmer {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+  .flow-line {
+    stroke-dasharray: 4 4;
+    animation: flow 1.5s linear infinite;
+  }
+  .node-circle { transform-origin: center; transform-box: fill-box; }
+  .node-1 { animation: nodeBounce 3s ease-in-out infinite; }
+  .node-2 { animation: nodeBounce 3s ease-in-out infinite 0.5s; }
+  .node-3 { animation: nodeBounce 3s ease-in-out infinite 1s; }
+  .node-4 { animation: nodeBounce 3s ease-in-out infinite 1.5s; }
+  .node-5 { animation: nodeBounce 3s ease-in-out infinite 2s; }
+  .ai-pulse { animation: shimmer 2s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<nav id="nav">
+  <div class="logo">
+    <span class="logo-dot"></span>
+    FLUJO
+  </div>
+  <ul class="nav-links">
+    <li><a href="#metodo">Método</a></li>
+    <li><a href="#casos">Casos</a></li>
+    <li><a href="#manifesto">Manifiesto</a></li>
+    <li><a href="#contacto">Contacto</a></li>
+  </ul>
+  <a href="#contacto" class="nav-cta">Agendar diagnóstico</a>
+</nav>
+
+<!-- ===== HERO ===== -->
+<header class="hero">
+  <div class="container">
+    <div class="hero-grid">
+      <div>
+        <div class="hero-meta">Automatización empresarial · n8n + IA</div>
+        <h1 class="reveal">
+          Tu equipo no debería <em>repetir</em> lo que una <span class="underline">máquina puede hacer</span>.
+        </h1>
+        <p class="lead reveal">
+          Diseñamos flujos de automatización a medida que conectan tus herramientas, integran modelos de IA y eliminan trabajo manual. Menos fricción, más decisiones.
+        </p>
+        <div class="hero-actions reveal">
+          <a href="#contacto" class="btn-primary">
+            Diagnóstico gratuito
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="#metodo" class="btn-ghost">Cómo trabajamos</a>
+        </div>
+      </div>
+      <div class="node-viz reveal">
+        <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="aiGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#C84A1F" stop-opacity="0.4"/>
+              <stop offset="100%" stop-color="#C84A1F" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+
+          <!-- Connecting lines -->
+          <g stroke="#0F0E0B" stroke-width="1.5" fill="none">
+            <path class="flow-line" d="M 80 100 Q 140 100 200 200"/>
+            <path class="flow-line" d="M 80 300 Q 140 300 200 200"/>
+            <path class="flow-line" d="M 200 200 Q 280 200 320 120"/>
+            <path class="flow-line" d="M 200 200 Q 280 200 320 280"/>
+            <path class="flow-line" d="M 320 120 Q 360 200 320 280"/>
+          </g>
+
+          <!-- AI core glow -->
+          <circle cx="200" cy="200" r="80" fill="url(#aiGrad)" class="ai-pulse"/>
+
+          <!-- Input nodes -->
+          <g class="node-circle node-1">
+            <rect x="55" y="80" width="50" height="40" fill="#F2EDE2" stroke="#0F0E0B" stroke-width="1.5"/>
+            <text x="80" y="105" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#0F0E0B">CRM</text>
+          </g>
+          <g class="node-circle node-2">
+            <rect x="55" y="280" width="50" height="40" fill="#F2EDE2" stroke="#0F0E0B" stroke-width="1.5"/>
+            <text x="80" y="305" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#0F0E0B">EMAIL</text>
+          </g>
+
+          <!-- AI core node -->
+          <g class="node-circle node-3">
+            <circle cx="200" cy="200" r="42" fill="#0F0E0B"/>
+            <circle cx="200" cy="200" r="42" fill="none" stroke="#C84A1F" stroke-width="1.5" stroke-dasharray="2 3"/>
+            <text x="200" y="195" text-anchor="middle" font-family="Fraunces" font-style="italic" font-size="14" fill="#F2EDE2">IA</text>
+            <text x="200" y="212" text-anchor="middle" font-family="JetBrains Mono" font-size="7" fill="#FFB89A">+ n8n</text>
+          </g>
+
+          <!-- Output nodes -->
+          <g class="node-circle node-4">
+            <rect x="295" y="100" width="50" height="40" fill="#C84A1F" stroke="#0F0E0B" stroke-width="1.5"/>
+            <text x="320" y="125" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#F2EDE2">SLACK</text>
+          </g>
+          <g class="node-circle node-5">
+            <rect x="295" y="260" width="50" height="40" fill="#C84A1F" stroke="#0F0E0B" stroke-width="1.5"/>
+            <text x="320" y="285" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#F2EDE2">DB</text>
+          </g>
+
+          <!-- Decorative elements -->
+          <text x="200" y="380" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#807A6E" letter-spacing="2">FLUJO_001 · WORKFLOW</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ===== MARQUEE ===== -->
+<div class="marquee">
+  <div class="marquee-track">
+    <span class="marquee-item">Procesos sin código</span>
+    <span class="marquee-item">Agentes IA personalizados</span>
+    <span class="marquee-item">Integración total</span>
+    <span class="marquee-item">ROI medible</span>
+    <span class="marquee-item">Self-hosted o cloud</span>
+    <span class="marquee-item">Procesos sin código</span>
+    <span class="marquee-item">Agentes IA personalizados</span>
+    <span class="marquee-item">Integración total</span>
+    <span class="marquee-item">ROI medible</span>
+    <span class="marquee-item">Self-hosted o cloud</span>
+  </div>
+</div>
+
+<!-- ===== METHOD ===== -->
+<section id="metodo">
+  <div class="container">
+    <div class="section-label">Método</div>
+    <h2 class="section-title reveal">Tres etapas. Resultado <em>tangible</em>.</h2>
+    <p class="section-intro reveal">
+      No vendemos software. Diagnosticamos, diseñamos y desplegamos automatizaciones que eliminan tareas repetitivas en tu operación.
+    </p>
+
+    <div class="method-grid">
+      <div class="method-card reveal">
+        <div class="method-num">i.</div>
+        <h3>Diagnóstico</h3>
+        <p>Mapeamos tus procesos, identificamos cuellos de botella y proyectamos las horas/mes que un flujo automatizado podría liberar. Sin compromiso.</p>
+        <div class="method-tags">
+          <span class="method-tag">workshops</span>
+          <span class="method-tag">audit</span>
+          <span class="method-tag">ROI estimate</span>
+        </div>
+      </div>
+
+      <div class="method-card reveal">
+        <div class="method-num">ii.</div>
+        <h3>Diseño &amp; build</h3>
+        <p>Construimos los workflows en n8n con la lógica IA que cada caso necesita: clasificación, extracción, generación, decisión. Documentado y probado.</p>
+        <div class="method-tags">
+          <span class="method-tag">n8n</span>
+          <span class="method-tag">OpenAI / Claude</span>
+          <span class="method-tag">webhooks</span>
+          <span class="method-tag">RAG</span>
+        </div>
+      </div>
+
+      <div class="method-card reveal">
+        <div class="method-num">iii.</div>
+        <h3>Operación</h3>
+        <p>Monitoreamos, iteramos y entrenamos a tu equipo para que tomen el control. La automatización vive con tu negocio, no afuera.</p>
+        <div class="method-tags">
+          <span class="method-tag">monitoring</span>
+          <span class="method-tag">handoff</span>
+          <span class="method-tag">soporte</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CASES ===== -->
+<section id="casos" class="cases">
+  <div class="container">
+    <div class="section-label">Casos de uso</div>
+    <h2 class="section-title reveal">Lo que hoy <em>te roba tiempo</em>, mañana corre solo.</h2>
+    <p class="section-intro reveal">
+      Cada flujo se diseña a medida, pero estos son los problemas que resolvemos casi siempre.
+    </p>
+
+    <div class="cases-grid">
+      <div class="case reveal">
+        <svg class="case-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M3 8l9 6 9-6M3 8v10a2 2 0 002 2h14a2 2 0 002-2V8M3 8l9-6 9 6"/>
+        </svg>
+        <h4>Triage de emails y tickets</h4>
+        <p>IA clasifica, prioriza y enruta cada mensaje al área correcta. Genera respuestas borrador con el contexto del cliente.</p>
+        <div class="case-meta">
+          <span>Soporte · Ventas</span>
+          <span><strong>−65%</strong> tiempo respuesta</span>
+        </div>
+      </div>
+
+      <div class="case reveal">
+        <svg class="case-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+        </svg>
+        <h4>Extracción de datos en documentos</h4>
+        <p>Facturas, contratos, comprobantes. La IA extrae campos clave y los carga directo al ERP, contabilidad o base de datos.</p>
+        <div class="case-meta">
+          <span>Finanzas · Legal</span>
+          <span><strong>+12hs/sem</strong> liberadas</span>
+        </div>
+      </div>
+
+      <div class="case reveal">
+        <svg class="case-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+        </svg>
+        <h4>Asistentes internos con tu data</h4>
+        <p>Chatbots conectados a tus manuales, políticas y CRM. Tu equipo pregunta, la IA responde con fuentes verificables.</p>
+        <div class="case-meta">
+          <span>RRHH · Operaciones</span>
+          <span><strong>24/7</strong> disponibilidad</span>
+        </div>
+      </div>
+
+      <div class="case reveal">
+        <svg class="case-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M3 3v18h18M7 14l4-4 4 4 5-5"/>
+        </svg>
+        <h4>Reportes y alertas inteligentes</h4>
+        <p>Dashboards que se arman solos, alertas que solo disparan cuando algo importa. Resúmenes ejecutivos generados con IA.</p>
+        <div class="case-meta">
+          <span>Dirección · Data</span>
+          <span><strong>Tiempo real</strong></span>
+        </div>
+      </div>
+
+      <div class="case reveal">
+        <svg class="case-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+        </svg>
+        <h4>Onboarding y procesos secuenciales</h4>
+        <p>Alta de clientes, empleados o proveedores: validaciones, firmas, accesos y notificaciones encadenados sin intervención.</p>
+        <div class="case-meta">
+          <span>RRHH · Compliance</span>
+          <span><strong>−80%</strong> errores manuales</span>
+        </div>
+      </div>
+
+      <div class="case reveal">
+        <svg class="case-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 2l3 7h7l-5.5 4 2 7-6.5-4.5L5.5 20l2-7L2 9h7z"/>
+        </svg>
+        <h4>Lead scoring y nurturing</h4>
+        <p>La IA analiza señales de cada lead, los califica y arma secuencias personalizadas. Tu equipo comercial habla solo con quien importa.</p>
+        <div class="case-meta">
+          <span>Marketing · Ventas</span>
+          <span><strong>+3x</strong> tasa conversión</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== STATS ===== -->
+<section style="padding: 0;">
+  <div class="container">
+    <div class="stats">
+      <div class="reveal">
+        <div class="stat-num"><em>~40%</em></div>
+        <div class="stat-label">Tareas repetitivas<br/>automatizables</div>
+      </div>
+      <div class="reveal">
+        <div class="stat-num"><em>2-4</em></div>
+        <div class="stat-label">Semanas hasta<br/>el primer flujo en producción</div>
+      </div>
+      <div class="reveal">
+        <div class="stat-num"><em>400+</em></div>
+        <div class="stat-label">Integraciones nativas<br/>en n8n</div>
+      </div>
+      <div class="reveal">
+        <div class="stat-num"><em>100%</em></div>
+        <div class="stat-label">Tu data, tu infraestructura.<br/>Self-hosted disponible</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== MANIFESTO ===== -->
+<section id="manifesto">
+  <div class="container">
+    <div class="section-label">Manifiesto</div>
+    <h2 class="section-title reveal">Por qué <em>FLUJO</em>.</h2>
+
+    <div class="manifesto-grid" style="margin-top: 64px;">
+      <div class="manifesto-text reveal">
+        <p>Hay automatización que <em>simplifica</em> y otra que solo <em>multiplica</em> el caos.</p>
+        <p>Nosotros hacemos la primera.</p>
+      </div>
+
+      <ul class="manifesto-list">
+        <li class="reveal">
+          <div>
+            <h5>No vendemos licencias, vendemos resultado.</h5>
+            <p>Trabajamos con n8n porque es open-source, flexible y vivo. La IA que use cada flujo se elige por necesidad, no por contrato.</p>
+          </div>
+        </li>
+        <li class="reveal">
+          <div>
+            <h5>Tu data se queda contigo.</h5>
+            <p>Self-hosted en tu infraestructura cuando hace falta. Sin lock-in. Sin sorpresas en privacidad.</p>
+          </div>
+        </li>
+        <li class="reveal">
+          <div>
+            <h5>Construimos para que entiendas.</h5>
+            <p>Cada workflow se entrega documentado y editable. Si mañana queres seguir solo, podés hacerlo.</p>
+          </div>
+        </li>
+        <li class="reveal">
+          <div>
+            <h5>Pequeño y rápido vence grande y prometido.</h5>
+            <p>Empezamos por el caso de mayor impacto, lo desplegamos en semanas y desde ahí escalamos. Sin proyectos eternos.</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CTA ===== -->
+<section id="contacto" class="cta">
+  <div class="container">
+    <h2 class="cta-title reveal">¿Qué automatizarías <em>hoy</em>?</h2>
+    <p class="cta-sub reveal">
+      Diagnóstico inicial sin costo. Te respondemos en menos de 24 horas con una propuesta concreta.
+    </p>
+    <form class="cta-form reveal" onsubmit="event.preventDefault(); this.querySelector('button').textContent='Recibido ✓';">
+      <input type="email" placeholder="tu@empresa.com" required />
+      <button type="submit">Empezar</button>
+    </form>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <h3>FLUJO<span style="color: var(--terracotta);">.</span></h3>
+        <p>Automatización empresarial con n8n e inteligencia artificial. Diseñamos flujos que liberan tiempo y mejoran decisiones.</p>
+      </div>
+      <div class="footer-col">
+        <h6>Empresa</h6>
+        <ul>
+          <li><a href="#metodo">Método</a></li>
+          <li><a href="#casos">Casos</a></li>
+          <li><a href="#manifesto">Manifiesto</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h6>Contacto</h6>
+        <ul>
+          <li><a href="mailto:hola@flujo.io">hola@flujo.io</a></li>
+          <li><a href="#">LinkedIn</a></li>
+          <li><a href="#">WhatsApp</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h6>Legal</h6>
+        <ul>
+          <li><a href="#">Privacidad</a></li>
+          <li><a href="#">Términos</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Flujo · Montevideo, UY</span>
+      <span>Hecho con n8n + IA</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Nav scroll effect
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 20);
+  });
+
+  // Reveal on scroll
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) {
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.reveal').forEach((el, i) => {
+    el.style.transitionDelay = `${(i % 6) * 0.08}s`;
+    io.observe(el);
+  });
+</script>
+
+</body>
+</html>
