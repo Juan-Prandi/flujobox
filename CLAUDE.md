@@ -16,8 +16,9 @@ flujobox/
 │   └── flujobox-dev.md
 └── web/              # public site, served by a Cloudflare Worker
     ├── package.json
-    ├── wrangler.toml # name = flujobox-web, assets dir = ./public
-    ├── src/index.js  # Worker entry; delegates to env.ASSETS
+    ├── wrangler.toml # name = flujobox-web, assets + D1 bindings
+    ├── schema.sql    # D1 schema (leads table)
+    ├── src/index.js  # Worker entry: /api/lead + env.ASSETS fallback
     └── public/       # static assets served by the Worker
 ```
 
@@ -57,10 +58,25 @@ Static site served by a Cloudflare Worker via [Workers Static Assets](https://de
   exist in the Cloudflare account.
 - **`workers.dev` subdomain:** disabled (default once `routes` are set).
 - **Wrangler:** v4 (pinned in `web/package.json`)
-- **Entry:** `web/src/index.js` — single `fetch` handler that delegates to
-  `env.ASSETS.fetch(request)`. Add server-side logic here when needed.
+- **Entry:** `web/src/index.js` — `fetch` handler. `POST /api/lead` writes a
+  row to D1 and forwards the payload to n8n; everything else falls back to
+  `env.ASSETS.fetch(request)`.
 - **Assets:** `web/public/` — files served as-is. `not_found_handling =
   "single-page-application"` means unknown paths fall back to `index.html`.
+- **D1 database:** `flujobox-leads`, bound as `env.LEADS_DB`. Schema in
+  `web/schema.sql` (single `leads` table). Apply with
+  `cd web && npx wrangler d1 execute flujobox-leads --remote --file=schema.sql`.
+- **Lead capture flow:** form on `flujobox.com` → `POST /api/lead` →
+  `INSERT INTO leads` (D1) + fire-and-forget POST to
+  `https://dev.flujobox.com/webhook/lead-capture` (n8n workflow that appends
+  to Google Sheets + sends WhatsApp via Twilio).
+
+#### Inspect leads
+
+```sh
+cd web && npx wrangler d1 execute flujobox-leads --remote \
+  --command="SELECT id, created_at, name, email FROM leads ORDER BY id DESC LIMIT 20;"
+```
 
 #### Deploy
 
