@@ -11,3 +11,8 @@ routes = [
 directory = "./public"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
+
+[[d1_databases]]
+binding = "LEADS_DB"
+database_name = "flujobox-leads"
+database_id = "d012dfc8-1ab4-46a4-94df-b1c54a9bcf07"

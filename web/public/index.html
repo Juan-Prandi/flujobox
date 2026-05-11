@@ -604,15 +604,16 @@
 
   .cta-form {
     display: flex;
+    flex-direction: column;
     max-width: 520px;
     margin: 0 auto;
     border: 1px solid var(--ink);
     background: var(--paper);
   }
   .cta-form input {
-    flex: 1;
     padding: 18px 24px;
     border: none;
+    border-bottom: 1px solid var(--ink);
     background: transparent;
     font-family: var(--sans);
     font-size: 15px;
@@ -632,7 +633,20 @@
     cursor: pointer;
     transition: background 0.2s;
   }
-  .cta-form button:hover { background: var(--terracotta); }
+  .cta-form button:hover:not(:disabled) { background: var(--terracotta); }
+  .cta-form button:disabled { opacity: 0.6; cursor: not-allowed; }
+  .cta-status {
+    max-width: 520px;
+    margin: 16px auto 0;
+    min-height: 1.4em;
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .cta-status.ok { color: var(--olive); }
+  .cta-status.err { color: var(--terracotta-deep); }
 
   /* ===== FOOTER ===== */
   footer {
@@ -1048,10 +1062,12 @@
     <p class="cta-sub reveal">
       Diagnóstico inicial sin costo. Te respondemos en menos de 24 horas con una propuesta concreta.
     </p>
-    <form class="cta-form reveal" onsubmit="event.preventDefault(); this.querySelector('button').textContent='Recibido ✓';">
-      <input type="email" placeholder="tu@empresa.com" required />
+    <form class="cta-form reveal" id="lead-form">
+      <input type="text" name="name" placeholder="Tu nombre" autocomplete="name" required />
+      <input type="email" name="email" placeholder="tu@empresa.com" autocomplete="email" required />
       <button type="submit">Empezar</button>
     </form>
+    <p class="cta-status reveal" id="lead-status" role="status" aria-live="polite"></p>
   </div>
 </section>
 
@@ -1115,6 +1131,47 @@
     el.style.transitionDelay = `${(i % 6) * 0.08}s`;
     io.observe(el);
   });
+
+  // Lead form submit
+  const leadForm = document.getElementById('lead-form');
+  const leadStatus = document.getElementById('lead-status');
+  if (leadForm) {
+    leadForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = leadForm.querySelector('button');
+      const originalText = button.textContent;
+      leadStatus.className = 'cta-status reveal in';
+      leadStatus.textContent = 'Enviando…';
+      button.disabled = true;
+
+      const data = {
+        name: leadForm.elements.name.value.trim(),
+        email: leadForm.elements.email.value.trim(),
+      };
+
+      try {
+        const res = await fetch('/api/lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (res.ok && json.ok) {
+          leadStatus.className = 'cta-status reveal in ok';
+          leadStatus.textContent = 'Recibido ✓ Te contactamos en menos de 24h.';
+          button.textContent = 'Enviado';
+          leadForm.reset();
+        } else {
+          throw new Error(json.error || 'send_failed');
+        }
+      } catch (err) {
+        leadStatus.className = 'cta-status reveal in err';
+        leadStatus.textContent = 'No pudimos enviar. Probá de nuevo o escribinos a hola@flujo.io.';
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    });
+  }
 </script>
 
 </body>
