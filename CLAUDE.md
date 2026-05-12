@@ -83,6 +83,64 @@ top-level project.
   (also `flujo-dev`) is configured in `~/.ssh/config`. See
   `servers/flujobox-dev.md` for full notes.
 
+## n8n (MVP backend)
+
+The MVP runs on a self-hosted n8n at **https://dev.flujobox.com**. The repo
+does not store workflow JSON — they live in n8n's encrypted SQLite DB on
+the droplet (volume `n8n_data`, encrypted with `N8N_ENCRYPTION_KEY`).
+
+### Working with n8n from the repo
+
+The n8n Public REST API is the preferred way to read/edit workflows from
+this repo (faster and more reversible than clicking through the UI):
+
+```
+GET/POST/PUT/DELETE https://dev.flujobox.com/api/v1/...
+Header: X-N8N-API-KEY: <token>
+```
+
+Workflow JSON, credential metadata, and executions can all be inspected.
+**Caveats on PUT /workflows/{id}:** only `name`, `nodes`, `connections`,
+`settings`, `staticData` are accepted. Fields like `active`, `tags`,
+`isArchived`, `availableInMCP` cause `400 must NOT have additional
+properties`. OAuth2 credentials must be created in the UI (the OAuth
+dance can't be completed via API).
+
+The n8n API token (and other working secrets like dLocal sandbox keys,
+PDFShift key) is pasted by the user into `.n8n-tmp/` files, which are
+gitignored. The folder is a working scratchpad, never committed.
+
+### Active workflows
+
+| ID                 | Name                          | Trigger                                 | What it does |
+| ------------------ | ----------------------------- | --------------------------------------- | --- |
+| `DITLcQwh8zeoKxXv` | Lead capture (flujobox.com)   | `POST /webhook/lead-capture`            | Form en la home → append a Google Sheet → WhatsApp a Juan (Twilio) → email de confirmación al lead (Gmail) |
+
+### Credentials in n8n (IDs are stable; values live encrypted in n8n_data)
+
+| ID                 | Type                       | Name                  | Used by |
+| ------------------ | -------------------------- | --------------------- | --- |
+| `BFi6pjH59dZvHv4H` | `googleSheetsOAuth2Api`    | Google Sheets (Juan)  | Lead capture |
+| `tZMBtMs6L8yk98eu` | `twilioApi`                | Twilio (Juan)         | Lead capture |
+| `e6QjXNjMj0L1zI4X` | `googleCalendarOAuth2Api`  | Google Calendar (Juan) | (reservada) |
+| `CZjOLfLVe5afF4rw` | `gmailOAuth2`              | Gmail account         | Lead capture |
+
+OAuth credentials all share the same Google Cloud project ("workflow demo
+cec"). When adding a new Google node, enable the relevant API in that
+project and add `https://dev.flujobox.com/rest/oauth2-credential/callback`
+as authorized redirect URI on the OAuth client.
+
+### Roadmap
+
+- **Payments (in progress, blocked on signup):** dLocal Go sandbox →
+  hosted checkout link generation. Two-workflow design:
+  `checkout-create` (sync, returns redirect URL) and
+  `dlocal-payment-notification` (async webhook, verifies via
+  `GET /v1/payments/{id}`, then logs to Sheet + generates HTML→PDF
+  receipt via PDFShift + emails the receipt to the customer). UYU
+  only at launch. Visual receipt PDF for MVP; DGI e-factura is a
+  separate workflow once a facturador electrónico is contracted.
+
 ## Working in this repo (for agents)
 
 - Always run common tasks through `make` from the repo root, not by `cd`-ing
@@ -90,3 +148,6 @@ top-level project.
 - When adding a new top-level project, update both this file and `README.md`
   (project table + layout block) so the docs stay in sync.
 - Keep `wrangler.toml` `compatibility_date` current when bumping wrangler.
+- For n8n changes, prefer the REST API over UI clicks when possible: write
+  the PUT body to `.n8n-tmp/`, send it with curl, and verify with a GET.
+  Update the "Active workflows" table above when adding a new workflow.

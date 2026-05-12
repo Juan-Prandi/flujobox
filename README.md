@@ -5,10 +5,15 @@ orchestration lives at the root (`Makefile`, `CLAUDE.md`).
 
 ## Projects
 
-| Path       | Description                                            | Live URL              |
-| ---------- | ------------------------------------------------------ | --------------------- |
-| `web/`     | Public site, served by a Cloudflare Worker             | https://flujobox.com  |
-| `servers/` | Docs for long-lived hosts (e.g. `flujobox-dev` / n8n)  | —                     |
+| Path       | Description                                            | Live URL                  |
+| ---------- | ------------------------------------------------------ | ------------------------- |
+| `web/`     | Public site, served by a Cloudflare Worker             | https://flujobox.com      |
+| `servers/` | Docs for long-lived hosts (e.g. `flujobox-dev` / n8n)  | https://dev.flujobox.com  |
+
+The MVP backend is **n8n** (self-hosted on `flujobox-dev`). Workflow definitions
+live in n8n's encrypted DB, not in this repo. See `CLAUDE.md` (section "n8n
+(MVP backend)") for the active workflows table, credential IDs, API usage
+patterns, and the payments roadmap (dLocal Go + PDFShift, in progress).
 
 ## Quick start
 
